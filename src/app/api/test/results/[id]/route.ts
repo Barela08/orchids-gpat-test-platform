@@ -16,7 +16,11 @@ export async function GET(
       return NextResponse.json({ error: 'Result not found' }, { status: 404 });
     }
 
-    const questions = await Question.find({ year: result.year }).sort({ questionNumber: 1 });
+    const filter: any = { year: result.year };
+    if (result.subject && result.subject !== 'All') filter.subject = result.subject;
+    if (result.chapter && result.chapter !== 'General') filter.chapter = result.chapter;
+
+    const questions = await Question.find(filter).sort({ questionNumber: 1 });
 
     return NextResponse.json({
       result,

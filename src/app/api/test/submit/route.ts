@@ -6,9 +6,18 @@ import { TestResult } from '@/lib/models/TestResult';
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const { userId, userName, year, answers, startedAt, timeTaken } = await req.json();
+    const body = await req.json();
+    const { searchParams } = new URL(req.url);
+    const year = searchParams.get('year') || body.year;
+    const subject = searchParams.get('subject') || body.subject || 'All';
+    const chapter = searchParams.get('chapter') || body.chapter || 'General';
+    const { userId, userName, answers, startedAt, timeTaken } = body;
 
-    const questions = await Question.find({ year }).sort({ questionNumber: 1 });
+    const filter: any = { year };
+    if (subject !== 'All') filter.subject = subject;
+    if (chapter !== 'General') filter.chapter = chapter;
+
+    const questions = await Question.find(filter).sort({ questionNumber: 1 });
 
     let correctAnswers = 0;
     let wrongAnswers = 0;
@@ -41,6 +50,8 @@ export async function POST(req: Request) {
     const testResult = await TestResult.create({
       userId,
       userName,
+      subject,
+      chapter,
       year,
       totalQuestions,
       correctAnswers,

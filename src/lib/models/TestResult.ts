@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ITestResult extends Document {
   userId: mongoose.Types.ObjectId;
   userName: string;
+  subject: string;
+  chapter: string;
   year: string;
   totalQuestions: number;
   correctAnswers: number;
@@ -24,6 +26,8 @@ export interface ITestResult extends Document {
 const TestResultSchema = new Schema<ITestResult>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   userName: { type: String, required: true },
+  subject: { type: String, default: 'All' },
+  chapter: { type: String, default: 'General' },
   year: { type: String, required: true },
   totalQuestions: { type: Number, required: true },
   correctAnswers: { type: Number, required: true },

@@ -4,10 +4,21 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface YearData {
   year: string;
+  count: number;
+}
+
+interface SubjectData {
+  subject: string;
+  count: number;
+}
+
+interface ChapterData {
+  chapter: string;
   count: number;
 }
 
@@ -25,6 +36,8 @@ export default function DashboardPage() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
   const [years, setYears] = useState<YearData[]>([]);
+  const [subjectsByYear, setSubjectsByYear] = useState<Record<string, SubjectData[]>>({});
+  const [chaptersBySubject, setChaptersBySubject] = useState<Record<string, ChapterData[]>>({});
   const [results, setResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,6 +66,19 @@ export default function DashboardPage() {
       const resultsData = await resultsRes.json();
       setYears(yearsData);
       setResults(resultsData);
+      
+      // Load subjects and chapters for each year
+      const subjectsByYear: Record<string, SubjectData[]> = {};
+      for (const year of yearsData) {
+        const res = await fetch(`/api/questions?year=${year.year}`);
+        const questions = await res.json();
+        const subjects = [...new Set(questions.map((q: any) => q.subject).filter((s): s is string => typeof s === 'string'))];
+        subjectsByYear[year.year] = subjects.map((s) => ({
+          subject: s as string,
+          count: questions.filter((q: any) => q.subject === s).length
+        })); 
+      }
+      setSubjectsByYear(subjectsByYear);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
@@ -115,7 +141,7 @@ export default function DashboardPage() {
                       onClick={() => router.push(`/test?year=${y.year}`)}
                       className="w-full bg-emerald-500 hover:bg-emerald-600"
                     >
-                      Start Test
+                      Start Test ({y.year})
                     </Button>
                   </CardContent>
                 </Card>

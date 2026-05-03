@@ -19,6 +19,8 @@ function TestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const year = searchParams.get("year");
+  const subject = searchParams.get("subject");
+  const chapter = searchParams.get("chapter");
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -49,7 +51,10 @@ function TestContent() {
 
   const fetchQuestions = async () => {
     try {
-      const res = await fetch(`/api/questions?year=${year}`);
+      let url = `/api/questions?year=${year}`;
+      if (subject) url += `&subject=${encodeURIComponent(subject)}`;
+      if (chapter) url += `&chapter=${encodeURIComponent(chapter)}`;
+      const res = await fetch(url);
       const data = await res.json();
       setQuestions(data);
     } catch (error) {
@@ -82,6 +87,8 @@ function TestContent() {
           userId: user?.id,
           userName: user?.name,
           year,
+          subject,
+          chapter,
           answers,
           startedAt: startTime.toISOString(),
           timeTaken: timeElapsed
@@ -127,7 +134,7 @@ function TestContent() {
       <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white/10 backdrop-blur rounded-xl p-4">
             <div>
-              <h1 className="text-xl font-bold text-white">{year}</h1>
+              <h1 className="text-xl font-bold text-white">{year} {subject ? `- ${subject}` : ''} {chapter ? `- ${chapter}` : ''}</h1>
               <p className="text-emerald-200 text-sm">Question {currentIndex + 1} of {questions.length}</p>
             </div>
             <div className="flex items-center gap-4">
