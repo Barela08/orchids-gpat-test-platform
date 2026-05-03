@@ -7,13 +7,15 @@ export async function GET(req: Request) {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const year = searchParams.get('year');
+    const subject = searchParams.get('subject');
+    const chapter = searchParams.get('chapter');
 
-    if (year) {
-      const questions = await Question.find({ year }).sort({ questionNumber: 1 });
-      return NextResponse.json(questions);
-    }
+    const filter: any = {};
+    if (year) filter.year = year;
+    if (subject) filter.subject = subject;
+    if (chapter) filter.chapter = chapter;
 
-    const questions = await Question.find().sort({ year: -1, questionNumber: 1 });
+    const questions = await Question.find(filter).sort({ questionNumber: 1 });
     return NextResponse.json(questions);
   } catch (error) {
     console.error('Get questions error:', error);
@@ -56,13 +58,24 @@ export async function DELETE(req: Request) {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const year = searchParams.get('year');
+    const subject = searchParams.get('subject');
+    const chapter = searchParams.get('chapter');
 
-    if (year) {
-      const result = await Question.deleteMany({ year });
-      return NextResponse.json({ message: `Deleted ${result.deletedCount} questions from ${year}`, count: result.deletedCount });
+    const filter: any = {};
+    if (year) filter.year = year;
+    if (subject) filter.subject = subject;
+    if (chapter) filter.chapter = chapter;
+
+    if (Object.keys(filter).length === 0) {
+      return NextResponse.json({ error: 'At least one filter (year/subject/chapter) required' }, { status: 400 });
     }
 
-    return NextResponse.json({ error: 'Year parameter required' }, { status: 400 });
+    const result = await Question.deleteMany(filter);
+    return NextResponse.json({ 
+      message: `Deleted ${result.deletedCount} questions`, 
+      count: result.deletedCount,
+      filter 
+    });
   } catch (error) {
     console.error('Delete questions error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

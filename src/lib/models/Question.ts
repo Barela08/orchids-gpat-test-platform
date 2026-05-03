@@ -11,6 +11,7 @@ export interface IQuestion extends Document {
   };
   correctAnswer: 'a' | 'b' | 'c' | 'd';
   subject: string;
+  chapter: string;
   year: string;
   createdAt: Date;
 }
@@ -25,7 +26,8 @@ const QuestionSchema = new Schema<IQuestion>({
     d: { type: String, required: true }
   },
   correctAnswer: { type: String, enum: ['a', 'b', 'c', 'd'], required: true },
-  subject: { type: String, required: true },
+subject: { type: String, required: true },
+  chapter: { type: String, default: 'General' },
   year: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
 });

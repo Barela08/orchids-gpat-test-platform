@@ -40,6 +40,16 @@ interface StudentResults {
   results: TestResult[];
 }
 
+interface SubjectData {
+  subject: string;
+  count: number;
+}
+
+interface ChapterData {
+  chapter: string;
+  count: number;
+}
+
 export default function AdminPage() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -54,6 +64,11 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<StudentResults | null>(null);
   const [loadingStudentResults, setLoadingStudentResults] = useState(false);
+  const [subjects, setSubjects] = useState<SubjectData[]>([]);
+  const [chapters, setChapters] = useState<ChapterData[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [uploadSubject, setUploadSubject] = useState('');
+  const [uploadChapter, setUploadChapter] = useState('');
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -72,21 +87,35 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [resultsRes, yearsRes, studentsRes] = await Promise.all([
+      const [resultsRes, yearsRes, studentsRes, subjectsRes] = await Promise.all([
         fetch("/api/test/results"),
         fetch("/api/questions/years"),
-        fetch("/api/students")
+        fetch("/api/students"),
+        fetch("/api/questions/subjects")
       ]);
       const resultsData = await resultsRes.json();
       const yearsData = await yearsRes.json();
       const studentsData = await studentsRes.json();
+      const subjectsData = await subjectsRes.json();
       setResults(resultsData);
       setYears(yearsData);
       setStudents(Array.isArray(studentsData) ? studentsData : []);
+      setSubjects(subjectsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchChapters = async (subject: string) => {
+    try {
+      const res = await fetch(`/api/questions/${encodeURIComponent(subject)}/chapters`);
+      const data = await res.json();
+      setChapters(data);
+    } catch (error) {
+      console.error('Failed to fetch chapters:', error);
+      setChapters([]);
     }
   };
 
@@ -284,7 +313,9 @@ export default function AdminPage() {
             <TabsList className="bg-white/10">
               <TabsTrigger value="results" className="data-[state=active]:bg-purple-500">Student Results</TabsTrigger>
               <TabsTrigger value="students" className="data-[state=active]:bg-purple-500">Students</TabsTrigger>
-              <TabsTrigger value="questions" className="data-[state=active]:bg-purple-500">Questions</TabsTrigger>
+              <TabsTrigger value="questions" className="data-[state=active]:bg-purple-500">Years</TabsTrigger>
+              <TabsTrigger value="subjects" className="data-[state=active]:bg-purple-500">Subjects</TabsTrigger>
+              <TabsTrigger value="chapters" className="data-[state=active]:bg-purple-500">Chapters</TabsTrigger>
               <TabsTrigger value="upload" className="data-[state=active]:bg-purple-500">Upload Questions</TabsTrigger>
             </TabsList>
 
@@ -466,7 +497,7 @@ export default function AdminPage() {
             <TabsContent value="questions">
               <Card className="bg-white/10 backdrop-blur border-white/20">
                 <CardHeader>
-                  <CardTitle className="text-white">Question Bank</CardTitle>
+                  <CardTitle className="text-white">Years</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {years.length === 0 ? (
@@ -491,6 +522,101 @@ export default function AdminPage() {
                           </div>
                         ))}
                       </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="subjects">
+              <Card className="bg-white/10 backdrop-blur border-white/20">
+                <CardHeader>
+                  <CardTitle className="text-white">Subjects</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {subjects.length === 0 ? (
+                    <p className="text-white/70 text-center py-8">No subjects yet</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {subjects.map((s) => (
+                        <div key={s.subject} className="bg-white/10 p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-white/20" onClick={() => {
+                          setSelectedSubject(s.subject);
+                          fetchChapters(s.subject);
+                        }}>
+                          <div>
+                            <h3 className="text-xl font-bold text-white">{s.subject}</h3>
+                            <p className="text-purple-200">{s.count} Questions</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete all questions from ${s.subject}?`)) {
+                                fetch(`/api/questions?subject=${encodeURIComponent(s.subject)}`, { method: "DELETE" }).then(() => fetchData());
+                              }
+                            }}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="chapters">
+              <Card className="bg-white/10 backdrop-blur border-white/20">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white">Chapters - {selectedSubject || 'Select a subject'}</CardTitle>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedSubject('');
+                      setChapters([]);
+                    }}
+                    className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  >
+                    Clear Selection
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {selectedSubject ? (
+                    chapters.length === 0 ? (
+                      <p className="text-white/70 text-center py-8">No chapters or loading...</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {chapters.map((c) => (
+                          <div key={c.chapter} className="bg-white/10 p-4 rounded-xl flex justify-between items-center">
+                            <div>
+                              <h3 className="text-xl font-bold text-white">{c.chapter}</h3>
+                              <p className="text-purple-200">{c.count} Questions ({selectedSubject})</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                if (confirm(`Delete all questions from ${selectedSubject} - ${c.chapter}?`)) {
+                                  fetch(`/api/questions?subject=${encodeURIComponent(selectedSubject)}&chapter=${encodeURIComponent(c.chapter)}`, { method: "DELETE" }).then(() => {
+                                    fetchData();
+                                    fetchChapters(selectedSubject);
+                                  });
+                                }
+                              }}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-white/70 text-center py-8">Select a subject from Subjects tab</p>
                   )}
                 </CardContent>
               </Card>

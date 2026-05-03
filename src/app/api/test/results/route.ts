@@ -7,13 +7,17 @@ export async function GET(req: Request) {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
+    const year = searchParams.get('year');
+    const subject = searchParams.get('subject');
+    const chapter = searchParams.get('chapter');
 
-    if (userId) {
-      const results = await TestResult.find({ userId }).sort({ completedAt: -1 });
-      return NextResponse.json(results);
-    }
+    const filter: any = {};
+    if (userId) filter.userId = userId;
+    if (year) filter.year = year;
+    if (subject) filter.subject = subject;
+    if (chapter) filter.chapter = chapter;
 
-    const results = await TestResult.find().sort({ completedAt: -1 });
+    const results = await TestResult.find(filter).sort({ completedAt: -1 });
     return NextResponse.json(results);
   } catch (error) {
     console.error('Get results error:', error);
