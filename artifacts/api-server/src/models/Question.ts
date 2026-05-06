@@ -6,7 +6,8 @@ export interface IQuestion extends Document {
   options: { a: string; b: string; c: string; d: string };
   correctAnswer: 'a' | 'b' | 'c' | 'd';
   subject: string;
-  year: string;
+  chapter: string;
+  year?: string;
   createdAt: Date;
 }
 
@@ -21,10 +22,12 @@ const QuestionSchema = new Schema<IQuestion>({
   },
   correctAnswer: { type: String, enum: ['a', 'b', 'c', 'd'], required: true },
   subject: { type: String, required: true },
-  year: { type: String, required: true },
+  chapter: { type: String, required: true, default: 'General' },
+  year: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
-QuestionSchema.index({ year: 1, questionNumber: 1 }, { unique: true });
+QuestionSchema.index({ subject: 1, chapter: 1, questionNumber: 1 });
+QuestionSchema.index({ year: 1, questionNumber: 1 });
 
 export const Question = mongoose.models.Question || mongoose.model<IQuestion>('Question', QuestionSchema);

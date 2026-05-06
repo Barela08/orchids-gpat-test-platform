@@ -42,10 +42,10 @@ Required env vars / secrets:
 ## Product
 
 - **Login / Register** — JWT-authenticated; admin role auto-redirects to admin panel
-- **Dashboard** — lists available test years with question counts, shows personal test history
-- **Test page** — timed multiple-choice exam with question navigator and submit
-- **Result page** — score breakdown (correct/wrong/unanswered) with optional answer review
-- **Admin panel** — tabs for student results, student management, question bank, and bulk question upload
+- **Dashboard** — two modes: Subject→Chapter navigation OR Year-wise tests; personal test history with "Answer Sheet" link
+- **Test page** — timed MCQ exam; supports `?testType=subject|chapter|year` query params; shows subject & chapter per question
+- **Result page** — always-visible answer sheet with filter tabs (All / Correct / Wrong / Unanswered); stores question text so no re-fetch needed
+- **Admin panel** — Student Results with clickable answer-sheet panel; Students list; Question Bank (subject→chapter accordion with delete); Upload Questions (subject/chapter mode or year mode)
 
 ## User preferences
 

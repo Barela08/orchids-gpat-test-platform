@@ -9,8 +9,9 @@ router.get('/years', requireAuth, async (req, res) => {
   try {
     await connectDB();
     const years = await Question.distinct('year');
+    const validYears = years.filter(Boolean);
     const yearsWithCount = await Promise.all(
-      years.map(async (year) => {
+      validYears.map(async (year) => {
         const count = await Question.countDocuments({ year });
         return { year, count };
       })
@@ -23,15 +24,54 @@ router.get('/years', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/subjects', requireAuth, async (req, res) => {
+  try {
+    await connectDB();
+    const subjects = await Question.distinct('subject');
+    const subjectsWithCount = await Promise.all(
+      subjects.map(async (subject) => {
+        const chapters = await Question.distinct('chapter', { subject });
+        const count = await Question.countDocuments({ subject });
+        return { subject, chapterCount: chapters.length, questionCount: count };
+      })
+    );
+    subjectsWithCount.sort((a, b) => a.subject.localeCompare(b.subject));
+    return res.json(subjectsWithCount);
+  } catch (error) {
+    req.log.error({ error }, 'Get subjects error');
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/chapters', requireAuth, async (req, res) => {
+  try {
+    await connectDB();
+    const subject = req.query.subject as string | undefined;
+    const filter = subject ? { subject } : {};
+    const chapters = await Question.distinct('chapter', filter);
+    const chaptersWithCount = await Promise.all(
+      chapters.map(async (chapter) => {
+        const count = await Question.countDocuments({ ...(subject ? { subject } : {}), chapter });
+        return { chapter, count };
+      })
+    );
+    chaptersWithCount.sort((a, b) => a.chapter.localeCompare(b.chapter));
+    return res.json(chaptersWithCount);
+  } catch (error) {
+    req.log.error({ error }, 'Get chapters error');
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/', requireAuth, async (req, res) => {
   try {
     await connectDB();
-    const year = req.query.year as string | undefined;
-    if (year) {
-      const questions = await Question.find({ year }).sort({ questionNumber: 1 });
-      return res.json(questions);
-    }
-    const questions = await Question.find().sort({ year: -1, questionNumber: 1 });
+    const { year, subject, chapter } = req.query as Record<string, string | undefined>;
+    const filter: Record<string, string> = {};
+    if (year) filter.year = year;
+    if (subject) filter.subject = subject;
+    if (chapter) filter.chapter = chapter;
+    const questions = await Question.find(filter).sort({ questionNumber: 1 });
     return res.json(questions);
   } catch (error) {
     req.log.error({ error }, 'Get questions error');
@@ -46,9 +86,18 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     if (Array.isArray(data)) {
       const results = [];
       for (const q of data) {
-        const existing = await Question.findOne({ year: q.year, questionNumber: q.questionNumber });
+        const filter: Record<string, unknown> = {};
+        if (q.year) {
+          filter.year = q.year;
+          filter.questionNumber = q.questionNumber;
+        } else {
+          filter.subject = q.subject;
+          filter.chapter = q.chapter;
+          filter.questionNumber = q.questionNumber;
+        }
+        const existing = await Question.findOne(filter);
         if (existing) {
-          await Question.updateOne({ year: q.year, questionNumber: q.questionNumber }, q);
+          await Question.updateOne(filter, q);
         } else {
           await Question.create(q);
         }
@@ -67,12 +116,16 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
 router.delete('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     await connectDB();
-    const year = req.query.year as string | undefined;
-    if (year) {
-      const result = await Question.deleteMany({ year });
-      return res.json({ message: `Deleted ${result.deletedCount} questions from ${year}`, count: result.deletedCount });
+    const { year, subject, chapter } = req.query as Record<string, string | undefined>;
+    const filter: Record<string, string> = {};
+    if (year) filter.year = year;
+    if (subject) filter.subject = subject;
+    if (chapter) filter.chapter = chapter;
+    if (Object.keys(filter).length === 0) {
+      return res.status(400).json({ error: 'At least one filter (year, subject, or chapter) is required' });
     }
-    return res.status(400).json({ error: 'Year parameter required' });
+    const result = await Question.deleteMany(filter);
+    return res.json({ message: `Deleted ${result.deletedCount} questions`, count: result.deletedCount });
   } catch (error) {
     req.log.error({ error }, 'Delete questions error');
     return res.status(500).json({ error: 'Server error' });

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { connectDB } from '../../lib/mongodb.js';
 import { Question } from '../../models/Question.js';
 import { TestResult } from '../../models/TestResult.js';
-import { requireAuth, requireAdmin } from '../../lib/auth-middleware.js';
+import { requireAuth } from '../../lib/auth-middleware.js';
 
 const router = Router();
 
@@ -37,8 +37,7 @@ router.get('/results/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const questions = await Question.find({ year: result.year }).sort({ questionNumber: 1 });
-    return res.json({ result, questions });
+    return res.json({ result });
   } catch (error) {
     req.log.error({ error }, 'Get result error');
     return res.status(500).json({ error: 'Server error' });
@@ -48,11 +47,24 @@ router.get('/results/:id', requireAuth, async (req, res) => {
 router.post('/submit', requireAuth, async (req, res) => {
   try {
     await connectDB();
-    const { year, answers, startedAt, timeTaken } = req.body;
+    const { year, subject, chapter, testType = 'year', answers, startedAt, timeTaken } = req.body;
     const userId = req.user!.userId;
     const userName = req.user!.name;
 
-    const questions = await Question.find({ year }).sort({ questionNumber: 1 });
+    const filter: Record<string, string> = {};
+    if (testType === 'year' && year) filter.year = year;
+    if (testType === 'subject' && subject) filter.subject = subject;
+    if (testType === 'chapter') {
+      if (subject) filter.subject = subject;
+      if (chapter) filter.chapter = chapter;
+    }
+
+    let testLabel = '';
+    if (testType === 'year') testLabel = year || '';
+    else if (testType === 'subject') testLabel = subject || '';
+    else testLabel = `${subject} › ${chapter}`;
+
+    const questions = await Question.find(filter).sort({ questionNumber: 1 });
 
     let correctAnswers = 0;
     let wrongAnswers = 0;
@@ -69,6 +81,10 @@ router.post('/submit', requireAuth, async (req, res) => {
       return {
         questionId: q._id,
         questionNumber: q.questionNumber,
+        questionText: q.questionText,
+        options: q.options,
+        subject: q.subject,
+        chapter: q.chapter,
         selectedAnswer: userAnswer,
         correctAnswer: q.correctAnswer,
         isCorrect
@@ -81,7 +97,11 @@ router.post('/submit', requireAuth, async (req, res) => {
     const testResult = await TestResult.create({
       userId,
       userName,
-      year,
+      testType,
+      year: year || undefined,
+      subject: subject || undefined,
+      chapter: chapter || undefined,
+      testLabel,
       totalQuestions,
       correctAnswers,
       wrongAnswers,
