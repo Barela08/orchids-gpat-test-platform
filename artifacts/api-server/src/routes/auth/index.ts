@@ -5,14 +5,19 @@ import { connectDB } from '../../lib/mongodb.js';
 import { User } from '../../models/User.js';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'gpat-exam-secret-key-2024';
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+  return secret;
+}
 
 router.get('/init-admin', async (req, res) => {
   try {
     await connectDB();
-    const existingAdmin = await User.findOne({ email: 'admin' });
+    const existingAdmin = await User.findOne({ role: 'admin' });
     if (existingAdmin) {
-      return res.json({ message: 'Admin already exists' });
+      return res.status(403).json({ message: 'Admin already exists' });
     }
     const hashedPassword = await bcrypt.hash('admin1234', 10);
     await User.create({ name: 'Admin', email: 'admin', password: hashedPassword, role: 'admin' });
@@ -35,7 +40,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role, name: user.name },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/api";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,8 +37,8 @@ export default function DashboardPage() {
       const fetchData = async () => {
         try {
           const [yearsRes, resultsRes] = await Promise.all([
-            fetch("/api/questions/years"),
-            fetch(`/api/test/results?userId=${user.id}`)
+            apiFetch("/api/questions/years"),
+            apiFetch(`/api/test/results?userId=${user.id}`)
           ]);
           setYears(await yearsRes.json());
           setResults(await resultsRes.json());

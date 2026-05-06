@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/api";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,9 +66,9 @@ export default function AdminPage() {
   const fetchData = async () => {
     try {
       const [resultsRes, yearsRes, studentsRes] = await Promise.all([
-        fetch("/api/test/results"),
-        fetch("/api/questions/years"),
-        fetch("/api/students")
+        apiFetch("/api/test/results"),
+        apiFetch("/api/questions/years"),
+        apiFetch("/api/students")
       ]);
       setResults(await resultsRes.json());
       setYears(await yearsRes.json());
@@ -84,7 +85,7 @@ export default function AdminPage() {
     if (deleting) return;
     setDeleting(year);
     try {
-      const res = await fetch(`/api/questions?year=${encodeURIComponent(year)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/questions?year=${encodeURIComponent(year)}`, { method: "DELETE" });
       if (res.ok) fetchData();
     } catch (error) {
       console.error("Delete failed:", error);
@@ -97,7 +98,7 @@ export default function AdminPage() {
     if (deleting) return;
     setDeleting(studentId);
     try {
-      const res = await fetch(`/api/students?id=${studentId}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/students?id=${studentId}`, { method: "DELETE" });
       if (res.ok) {
         fetchData();
         if (selectedStudent?.student._id === studentId) setSelectedStudent(null);
@@ -112,7 +113,7 @@ export default function AdminPage() {
   const viewStudentResults = async (student: Student) => {
     setLoadingStudentResults(true);
     try {
-      const res = await fetch(`/api/test/results?userId=${student._id}`);
+      const res = await apiFetch(`/api/test/results?userId=${student._id}`);
       const studentResults = await res.json();
       setSelectedStudent({ student, results: Array.isArray(studentResults) ? studentResults : [] });
     } catch (error) {
@@ -191,9 +192,8 @@ export default function AdminPage() {
         setUploading(false);
         return;
       }
-      const res = await fetch("/api/questions", {
+      const res = await apiFetch("/api/questions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(questions)
       });
       const data = await res.json();

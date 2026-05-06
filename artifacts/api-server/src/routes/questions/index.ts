@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { connectDB } from '../../lib/mongodb.js';
 import { Question } from '../../models/Question.js';
+import { requireAuth, requireAdmin } from '../../lib/auth-middleware.js';
 
 const router = Router();
 
-router.get('/years', async (req, res) => {
+router.get('/years', requireAuth, async (req, res) => {
   try {
     await connectDB();
     const years = await Question.distinct('year');
@@ -22,7 +23,7 @@ router.get('/years', async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     await connectDB();
     const year = req.query.year as string | undefined;
@@ -38,7 +39,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     await connectDB();
     const data = req.body;
@@ -63,7 +64,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/', async (req, res) => {
+router.delete('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     await connectDB();
     const year = req.query.year as string | undefined;

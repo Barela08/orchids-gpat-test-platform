@@ -2,18 +2,23 @@ import { Router } from 'express';
 import { connectDB } from '../../lib/mongodb.js';
 import { Question } from '../../models/Question.js';
 import { TestResult } from '../../models/TestResult.js';
+import { requireAuth, requireAdmin } from '../../lib/auth-middleware.js';
 
 const router = Router();
 
-router.get('/results', async (req, res) => {
+router.get('/results', requireAuth, async (req, res) => {
   try {
     await connectDB();
     const userId = req.query.userId as string | undefined;
-    if (userId) {
-      const results = await TestResult.find({ userId }).sort({ completedAt: -1 });
+
+    if (req.user!.role === 'admin') {
+      const results = userId
+        ? await TestResult.find({ userId }).sort({ completedAt: -1 })
+        : await TestResult.find().sort({ completedAt: -1 });
       return res.json(results);
     }
-    const results = await TestResult.find().sort({ completedAt: -1 });
+
+    const results = await TestResult.find({ userId: req.user!.userId }).sort({ completedAt: -1 });
     return res.json(results);
   } catch (error) {
     req.log.error({ error }, 'Get results error');
@@ -21,12 +26,16 @@ router.get('/results', async (req, res) => {
   }
 });
 
-router.get('/results/:id', async (req, res) => {
+router.get('/results/:id', requireAuth, async (req, res) => {
   try {
     await connectDB();
     const { id } = req.params;
     const result = await TestResult.findById(id);
     if (!result) return res.status(404).json({ error: 'Result not found' });
+
+    if (req.user!.role !== 'admin' && result.userId.toString() !== req.user!.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
     const questions = await Question.find({ year: result.year }).sort({ questionNumber: 1 });
     return res.json({ result, questions });
@@ -36,10 +45,12 @@ router.get('/results/:id', async (req, res) => {
   }
 });
 
-router.post('/submit', async (req, res) => {
+router.post('/submit', requireAuth, async (req, res) => {
   try {
     await connectDB();
-    const { userId, userName, year, answers, startedAt, timeTaken } = req.body;
+    const { year, answers, startedAt, timeTaken } = req.body;
+    const userId = req.user!.userId;
+    const userName = req.user!.name;
 
     const questions = await Question.find({ year }).sort({ questionNumber: 1 });
 

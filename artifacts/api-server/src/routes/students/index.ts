@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { connectDB } from '../../lib/mongodb.js';
 import { User } from '../../models/User.js';
 import { TestResult } from '../../models/TestResult.js';
+import { requireAuth, requireAdmin } from '../../lib/auth-middleware.js';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     await connectDB();
     const students = await User.find({ role: 'student' }).select('-password').sort({ createdAt: -1 });
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.delete('/', async (req, res) => {
+router.delete('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     await connectDB();
     const studentId = req.query.id as string | undefined;

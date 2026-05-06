@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/api";
 import { useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +50,7 @@ export default function ResultPage() {
 
   useEffect(() => {
     if (id) {
-      fetch(`/api/test/results/${id}`)
+      apiFetch(`/api/test/results/${id}`)
         .then((r) => r.json())
         .then((data) => {
           setResult(data.result);

@@ -1,5 +1,6 @@
 import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/api";
 import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,7 +34,7 @@ function TestContent() {
 
   useEffect(() => {
     if (year) {
-      fetch(`/api/questions?year=${year}`)
+      apiFetch(`/api/questions?year=${year}`)
         .then((r) => r.json())
         .then((data) => setQuestions(data))
         .catch((err) => console.error("Failed to fetch questions:", err))
@@ -63,12 +64,9 @@ function TestContent() {
     if (!confirm("Are you sure you want to submit the test?")) return;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/test/submit", {
+      const res = await apiFetch("/api/test/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user?.id,
-          userName: user?.name,
           year,
           answers,
           startedAt: startTime.toISOString(),
