@@ -320,7 +320,7 @@ export default function AdminPage() {
                             {(["a", "b", "c", "d"] as const).map(opt => (
                               <div key={opt} className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm ${a.correctAnswer === opt ? "bg-green-500/25 border border-green-400" : a.selectedAnswer === opt && a.correctAnswer !== opt ? "bg-red-500/25 border border-red-400" : "bg-white/5"}`}>
                                 <span className="font-bold text-white">{opt.toUpperCase()}.</span>
-                                <span className="text-white flex-1">{a.options[opt]}</span>
+                                <span className="text-white flex-1">{a.options?.[opt] ?? ""}</span>
                                 {a.correctAnswer === opt && <span className="text-green-300 text-xs shrink-0">✓ Correct</span>}
                                 {a.selectedAnswer === opt && a.correctAnswer !== opt && <span className="text-red-300 text-xs shrink-0">✗ Answered</span>}
                               </div>

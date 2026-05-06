@@ -163,7 +163,7 @@ export default function ResultPage() {
                     return (
                       <div key={opt} className={`p-3 rounded-lg flex items-start gap-2 ${isCorrect ? "bg-green-500/25 border border-green-400" : isSelected && !isCorrect ? "bg-red-500/25 border border-red-400" : "bg-white/5"}`}>
                         <span className="font-bold text-white min-w-[24px]">{optionLabel(opt)}.</span>
-                        <span className="text-white flex-1">{a.options[opt]}</span>
+                        <span className="text-white flex-1">{a.options?.[opt] ?? ""}</span>
                         <span className="text-sm font-semibold ml-2 shrink-0">
                           {isCorrect && <span className="text-green-300">✓ Correct</span>}
                           {isSelected && !isCorrect && <span className="text-red-300">✗ Your Answer</span>}
