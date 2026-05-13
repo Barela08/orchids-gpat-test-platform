@@ -1,64 +1,45 @@
-# GPAT Exam Portal
+# [Project name]
 
-An online practice portal for the Graduate Pharmacy Aptitude Test (GPAT) — students can log in, take timed exams by year, and review results; admins can upload questions, manage students, and view all results.
+_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
 
 ## Run & Operate
 
-- Frontend dev: `pnpm --filter @workspace/gpat-portal run dev`
-- API dev: `pnpm --filter @workspace/api-server run dev`
-- Build API: `pnpm --filter @workspace/api-server run build`
-
-Required env vars / secrets:
-- `MONGODB_URI` — MongoDB connection string (Atlas or self-hosted)
-- `JWT_SECRET` — Optional; defaults to hardcoded fallback (set for production)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
-- **Frontend**: React 19 + Vite + Tailwind v4 + shadcn/ui + wouter (routing)
-- **Backend**: Express 5 + Mongoose (MongoDB ODM) + bcryptjs + jsonwebtoken
-- **Runtime**: Node 24, pnpm workspace monorepo
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval (from OpenAPI spec)
+- Build: esbuild (CJS bundle)
 
 ## Where things live
 
-- `artifacts/gpat-portal/src/` — React frontend
-  - `pages/` — home, dashboard, test, result, admin
-  - `lib/auth-context.tsx` — JWT auth context (localStorage-based)
-  - `index.css` — Tailwind v4 theme (oklch colors)
-- `artifacts/api-server/src/` — Express backend
-  - `models/` — Mongoose models: User, Question, TestResult
-  - `routes/auth/` — login, register, init-admin
-  - `routes/questions/` — CRUD + years list
-  - `routes/students/` — list, delete
-  - `routes/test/` — submit, results
+_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
 
 ## Architecture decisions
 
-- **MongoDB over Postgres**: Original app uses Mongoose/MongoDB; kept to preserve data compatibility and avoid a full ORM migration.
-- **JWT + localStorage auth**: Auth context stores token in localStorage; no session cookies. Simple and stateless.
-- **Admin seeded automatically**: `GET /api/auth/init-admin` creates `admin` / `admin1234` on first visit if no admin exists.
-- **Lazy MongoDB connection**: `connectDB()` connects at request time, not at server startup, so the server stays up even if MongoDB is temporarily unreachable.
-- **Tailwind v4 + oklch**: Uses Tailwind v4 with `@tailwindcss/vite` plugin and oklch color space (no postcss conflict).
+_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
 
 ## Product
 
-- **Login / Register** — JWT-authenticated; admin role auto-redirects to admin panel
-- **Dashboard** — two modes: Subject→Chapter navigation OR Year-wise tests; personal test history with "Answer Sheet" link
-- **Test page** — timed MCQ exam; supports `?testType=subject|chapter|year` query params; shows subject & chapter per question
-- **Result page** — always-visible answer sheet with filter tabs (All / Correct / Wrong / Unanswered); stores question text so no re-fetch needed
-- **Admin panel** — Student Results with clickable answer-sheet panel; Students list; Question Bank (subject→chapter accordion with delete); Upload Questions (subject/chapter mode or year mode)
+_Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-- Developed by Nilesh Barela
-- Admin credentials: email `admin`, password `admin1234`
+_Populate as you build — explicit user instructions worth remembering across sessions._
 
 ## Gotchas
 
-- Do NOT run `pnpm dev` at workspace root — apps run via Replit workflows
-- `pnpm --filter @workspace/api-server run build` must be run before `start` (esbuild bundles everything)
-- The postcss.config.mjs from the original Next.js import conflicts with Tailwind v4 — do not restore it
+_Populate as you build — sharp edges, "always run X before Y" rules._
 
 ## Pointers
 
-- Routing skill: `.local/skills/pnpm-workspace/SKILL.md`
-- React-Vite patterns: `.local/skills/react-vite/SKILL.md`
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
