@@ -1,45 +1,44 @@
-# [Project name]
+# GPAT Exam Portal
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A mock test platform for GPAT (Graduate Pharmacy Aptitude Test) preparation — students can practice questions by subject/chapter/year, take timed tests, and admins can manage the question bank.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `PORT=8080 pnpm --filter @workspace/api-server run dev` — run the API server
+- `PORT=18431 BASE_PATH=/ pnpm --filter @workspace/gpat-portal run dev` — run the frontend
+- `pnpm --filter @workspace/gpat-portal run build:vercel` — build frontend for Vercel
+- Required env: `MONGODB_URI`, `JWT_SECRET`
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite + Tailwind + Shadcn UI (wouter for routing)
+- Backend: Express 5 + MongoDB + Mongoose
+- Auth: JWT (bcryptjs for hashing)
+- Deployment: Vercel (frontend static + backend as serverless function)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/gpat-portal/` — React frontend
+- `artifacts/api-server/` — Express backend
+- `api/index.ts` — Vercel serverless function entry (wraps Express app)
+- `vercel.json` — Vercel deployment config
+- `artifacts/api-server/src/models/` — Mongoose models (User, Question, TestResult)
+- `artifacts/api-server/src/routes/` — API routes (auth, questions, students, test)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
+- MongoDB (Mongoose) used for all data — flexible schema suits question bank use case
+- JWT stored in localStorage for simplicity; tokens expire in 7d
+- Vercel: frontend is static, backend is one serverless function at `/api`
+- Admin account created via `/api/auth/init-admin` (blocks if admin already exists)
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Deploy on Vercel
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- The `/api/auth/init-admin` default password is `admin1234` — change after first login
+- `pino-pretty` is excluded from production (only used in dev via NODE_ENV check)
+- Vercel serverless function at `api/index.ts` does NOT use pino-http (uses console instead)
