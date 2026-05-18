@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-20", "web"]
 
 [deployment]
 router = "application"
@@ -49,7 +49,7 @@ args = "PORT=18431 BASE_PATH=/ pnpm --filter @workspace/gpat-portal run dev"
 waitForPort = 18431
 
 [agent]
-stack = "PNPM_WORKSPACE"
+stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
 
 [postMerge]
@@ -63,3 +63,6 @@ externalPort = 80
 [[ports]]
 localPort = 18431
 externalPort = 3000
+
+[nix]
+channel = "stable-25_05"
